@@ -1,0 +1,17 @@
+train_data = pd.read_csv(r'D:\Downloads\dataset\X_train_cleaned.csv')
+test_data = pd.read_csv(r'D:\Downloads\dataset\X_test_cleaned.csv')
+
+# Extract features and targets
+X_train_cleaned = train_data['review_body'].tolist()  # Text data
+Y_train = train_data['sentiment'].tolist()  # Labels
+X_test_cleaned = test_data['review_body'].tolist()
+Y_test = test_data['sentiment'].tolist()
+
+# Ensure the data is a list of strings
+X_train_cleaned = [str(item) for item in X_train_cleaned]
+X_test_cleaned = [str(item) for item in X_test_cleaned]
+
+# Split training data into train and validation sets
+X_train, X_val, Y_train, Y_val = train_test_split(
+    X_train_cleaned, Y_train, test_size=0.2, random_state=42, stratify=Y_train
+)
