@@ -1,38 +1,48 @@
 import requests
+import csv
 from bs4 import BeautifulSoup
 
 # Base URL for pagination
 base_url = "https://quotes.toscrape.com/page/{}/"
 
-# Start with page 1 and continue until no quotes are found
-page = 1
-while True:
-    url = base_url.format(page)
-    response = requests.get(url)
+# Open a CSV file to write quotes
+with open('quotes.csv', mode='w', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Quote"])  # Write header row
 
-    # If the page returns a 404 or doesn't exist, stop scraping
-    if response.status_code != 200:
-        print(f"Page {page} does not exist. Scraping stopped.")
-        break
+    # Start with page 1 and continue until the next button is missing
+    page = 1
+    while True:
+        url = base_url.format(page)
+        response = requests.get(url)
 
-    soup = BeautifulSoup(response.content, "html.parser")
+        # If the page returns a 404 or doesn't exist, stop scraping
+        if response.status_code != 200:
+            print(f"Page {page} does not exist. Scraping stopped.")
+            break
 
-    # Check if "No quotes found!" message is present
-    no_quotes = soup.find("div", class_="no_quotes")
-    if no_quotes:
-        print("No quotes found! Scraping stopped.")
-        break
+        soup = BeautifulSoup(response.content, "html.parser")
 
-    # Find all quote containers on this page
-    quotes = soup.find_all("div", class_="quote")
+        # Find all quote containers on this page
+        quotes = soup.find_all("div", class_="quote")
 
-    # Extract and print each quote's text and author
-    for quote in quotes:
-        text = quote.find("span", class_="text").text
-        author = quote.find("small", class_="author").text
-        print(f"Quote: {text}")
-        print(f"Author: {author}")
-        print("-" * 40)
+        # If no quotes are found, break the loop (optional condition)
+        if not quotes:
+            print("No quotes found! Scraping stopped.")
+            break
 
-    # Move to the next page
-    page += 1
+        # Extract and write each quote's text to the CSV
+        for quote in quotes:
+            text = quote.find("span", class_="text").text
+            writer.writerow([text])  # Write only the quote
+
+        # Check if there is a "Next" button for pagination
+        next_button = soup.find("li", class_="next")
+        if not next_button:
+            print("No 'Next' button found. Scraping stopped.")
+            break
+
+        # Move to the next page
+        page += 1
+
+print("Scraping completed. All quotes have been saved to 'quotes.csv'.")
