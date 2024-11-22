@@ -1,0 +1,27 @@
+
+def decrypt_key(encrypted_data, salt, iv, seed):
+    """
+    Decrypt the API key using AES decryption with a user-defined seed.
+    """
+    # Decode inputs
+    encrypted_data = base64.b64decode(encrypted_data)
+    salt = base64.b64decode(salt)
+    iv = base64.b64decode(iv)
+
+    # Regenerate the key
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    key = kdf.derive(seed.encode())
+
+    # Initialize AES cipher
+    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+
+    # Decrypt the API key
+    api_key = decryptor.update(encrypted_data) + decryptor.finalize()
+    return api_key.decode()
