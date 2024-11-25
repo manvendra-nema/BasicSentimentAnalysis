@@ -1,0 +1,33 @@
+9a2uyGSt29QO18YR2PtzaEvnxLdtkqjUcyTUL9K6wbB8zT8aCb0mFVmQ9GIbISeNavV1JFYRnHS85AO7/BDNvznIusckpfHVE0ibjty0KMWKuk61/PAHAJYOXpdkM4DfpMMWTQX6yD71GOytxe/8lX5Wx9/fdQTy/h1HVweCYjOdIdqlbrNrx3uTskEW8KVcAL09jDUuXfnBphmyeT01soq3OYQ=
+import base64
+import os
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+def decrypt_key(encrypted_data, salt, iv, seed):
+    """
+    Decrypt the API key using AES decryption with a user-defined seed.
+    """
+    # Decode inputs
+    encrypted_data = base64.b64decode(encrypted_data)
+    salt = base64.b64decode(salt)
+    iv = base64.b64decode(iv)
+
+    # Regenerate the key
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    key = kdf.derive(seed.encode())
+
+    # Initialize AES cipher
+    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+
+    # Decrypt the API key
+    api_key = decryptor.update(encrypted_data) + decryptor.finalize()
+    return api_key.decode()
